@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!--vue引入-->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <!--axios引入-->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 引入 Element UI 的 CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.6/lib/theme-chalk/index.css">
+    <!-- 引入 Element UI 的 JavaScript -->
+    <script src="https://unpkg.com/element-ui@2.15.6/lib/index.js"></script>
+
+    <style>
+        .el-table .warning-row {
+            background: oldlace;
+        }
+
+        .el-table .success-row {
+            background: #f0f9eb;
+        }
+    </style>
+
+</head>
+<body>
+<div id="app">
+    <!--批量删除和新增按钮-->
+    <el-row>
+        <el-button type="danger" plain>批量删除</el-button>
+        <el-button type="primary" @click="dialogVisible = true">新增</el-button>
+    </el-row>
+
+    <!--添加数据对话框表单-->
+    <el-dialog
+            title="编辑用户"
+            :visible.sync="dialogVisible"
+            width="30%">
+        <!--添加信息表单-->
+        <el-form ref="form" :model="form" label-width="80px">
+            <el-form-item label="用户名">
+                <el-input v-model="user.username"></el-input>
+            </el-form-item>
+            <el-form-item label="姓名">
+                <el-input v-model="user.fullname"></el-input>
+            </el-form-item>
+            <el-form-item label="权限">
+                <el-select v-model="user.role" placeholder="权限">
+                    <el-option label="管理员" value="1"></el-option>
+                    <el-option label="用户" value="2"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="电话">
+                <el-input v-model="user.phonenumber"></el-input>
+            </el-form-item>
+            <el-form-item label="邮箱">
+                <el-input v-model="user.email"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="onSubmit">立即创建</el-button>
+                <el-button @click="dialogVisible = false>取消</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
+
+    <el-form :inline="true" :model="formInline" class="demo-form-inline">
+                <el-form-item label="姓名">
+                    <el-input v-model="user.username" placeholder="姓名"></el-input>
+                </el-form-item>
+                <el-form-item label="权限">
+                    <el-select v-model="user.role" placeholder="权限">
+                        <el-option label="管理员" value="1"></el-option>
+                        <el-option label="用户" value="2"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="addUser">查询</el-button>
+                </el-form-item>
+        </el-form>
+
+
+
+
+
+    <!--表格-->
+    <template>
+
+        <el-table
+                :data="tableData"
+                style="width: 100%"
+                :row-class-name="tableRowClassName"
+                @selection-change="handleSelectionChange">
+            <el-table-column
+                    type="selection"
+                    width="55">
+            </el-table-column>
+            <el-table-column
+                    type="index"
+                    width="50">
+            </el-table-column>
+            <el-table-column
+                    prop="username"
+                    label="用户名"
+                    width="180"
+                    align="center">
+            </el-table-column>
+            <el-table-column
+                    prop="fullname"
+                    label="姓名"
+                    width="180"
+                    align="center">
+            </el-table-column>
+            <el-table-column
+                    prop="role"
+                    label="权限"
+                    align="center">
+            </el-table-column>
+            <el-table-column
+                    prop="phonenumber"
+                    label="电话"
+                    width="180"
+                    align="center">
+            </el-table-column>
+            <el-table-column
+                    prop="email"
+                    label="邮箱"
+                    width="180"
+                    align="center">
+            </el-table-column>
+            <el-table-column
+                    align="center"
+                    label="操作">
+                <el-button type="primary" icon="el-icon-edit" circle></el-button>
+                <el-button type="danger" icon="el-icon-delete" circle></el-button>
+
+            </el-table-column>
+        </el-table>
+    </template>
+</div>
+</body>
+<script>
+    new Vue({
+        el:"#app",
+        methods: {
+            tableRowClassName({row, rowIndex}) {
+                if (rowIndex === 1) {
+                    return 'warning-row';
+                } else if (rowIndex === 3) {
+                    return 'success-row';
+                }
+                return '';
+            },
+            /*复选框选中后执行*/
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            /*进行查询方法*/
+            onSubmit() {
+                console.log(this.user);
+            },
+            addUser(){
+
+            }
+        },
+        data(){
+            return{
+                tableData: [{
+                    username: 'wxh',
+                    fullname: '王小虎',
+                    role: '1',
+                    phonenumber:"1328690445",
+                    email:"xxx.com"
+                }, {
+                    username: '2016-05-02',
+                    fullname: '王小虎',
+                    role: '上海市普陀区金沙江路 1518 弄',
+                    phonenumber:"1328690445",
+                    email:"xxx.com"
+                }, {
+                    username: '2016-05-02',
+                    fullname: '王小虎',
+                    role: '上海市普陀区金沙江路 1518 弄',
+                    phonenumber:"1328690445",
+                    email:"xxx.com"
+                }, {
+                    username: '2016-05-02',
+                    fullname: '王小虎',
+                    role: '上海市普陀区金沙江路 1518 弄',
+                    phonenumber:"1328690445",
+                    email:"xxx.com"
+                }],
+                /*复选框选中数据集合*/
+                multipleSelection: [],
+                /*对应搜索表单数据*/
+                user: {
+                    fullname: '',
+                    role: ''
+                },
+                /*添加数据对话框是否展示*/
+            dialogVisible: false,
+                /*表单*/
+                form: {
+                    name: '',
+                    region: '',
+                    date1: '',
+                    date2: '',
+                    delivery: false,
+                    type: [],
+                    resource: '',
+                    desc: ''
+                }
+            }
+        }
+    })
+</script>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>养老院信息管理系统</title>
+    <!-- 引入 Vue -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <!-- 引入 Vue Router -->
+    <script src="https://cdn.jsdelivr.net/npm/vue-router@3.5.3/dist/vue-router.js"></script>
+    <!-- 引入 axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 引入 Element UI 的 CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.6/lib/theme-chalk/index.css">
+    <!-- 引入 Element UI 的 JavaScript -->
+    <script src="https://unpkg.com/element-ui@2.15.6/lib/index.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .el-header {
+            background-color: #1890ff;
+            color: #fff;
+            text-align: center;
+            font-size: 32px;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .el-aside {
+            background-color: #fafafa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .el-main {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .el-breadcrumb {
+            margin-bottom: 20px;
+        }
+
+        .el-breadcrumb__item:last-child {
+            font-weight: bold;
+        }
+
+        .el-breadcrumb__separator {
+            color: #999;
+        }
+
+        .el-button {
+            margin-right: 10px;
+        }
+
+        .el-table {
+            margin-top: 20px;
+        }
+
+        .dialog-footer {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .like {
+            cursor: pointer;
+            font-size: 25px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+<div id="app">
+    <el-container>
+        <el-header>养老院出入院办理登记系统</el-header>
+        <el-container>
+            <el-aside width="200px">
+                <el-menu :default-openeds="['1', '2']" router="true">
+                    <el-menu-item index="/">
+                        <router-link to="/">首页</router-link>
+                    </el-menu-item>
+                    <el-submenu index="1">
+                        <template slot="title"><i class="el-icon-message"></i>信息管理</template>
+                        <el-menu-item-group>
+                            <template slot="title">人员信息</template>
+                            <el-menu-item index="/elder">老人档案</el-menu-item>
+                            <el-menu-item index="/caretaker">护工档案</el-menu-item>
+                        </el-menu-item-group>
+                        <el-menu-item-group title="床位信息">
+                            <el-menu-item index="/distributed-bed">已分配床位</el-menu-item>
+                            <el-menu-item index="/avaliable-bed">未分配床位</el-menu-item>
+                        </el-menu-item-group>
+                    </el-submenu>
+                    <el-submenu index="2">
+                        <template slot="title"><i class="el-icon-menu"></i>信息办理</template>
+                        <el-menu-item-group>
+                            <el-menu-item index="/hospitalize">住院办理</el-menu-item>
+                            <el-menu-item index="/discharge">出院办理</el-menu-item>
+                            <el-menu-item index="/distribute">床位分配</el-menu-item>
+                        </el-menu-item-group>
+                    </el-submenu>
+                </el-menu>
+            </el-aside>
+            <el-main>
+                <!-- 面包屑 -->
+                <el-breadcrumb separator="/">
+                    <el-breadcrumb-item v-for="breadcrumb in breadcrumbs" :key="breadcrumb.text" :to="breadcrumb.to">{{ breadcrumb.text }}</el-breadcrumb-item>
+                </el-breadcrumb>
+                <router-view></router-view>
+            </el-main>
+        </el-container>
+    </el-container>
+</div>
+<script>
+    // 定义组件
+    const ElderProfile = {
+        template: `
+          <div>
+            <br>
+            <el-button type="danger" plain @click="deleteSelected">批量删除</el-button>
+            <el-button type="primary" @click="addNew">新增</el-button>
+            <el-table :data="elderTableData" stripe>
+              <el-table-column prop="id" label="序号" width="50" align="center"></el-table-column>
+              <el-table-column prop="name" label="姓名" width="100" align="center"></el-table-column>
+              <el-table-column prop="gender" label="性别" width="50" align="center">
+                <template slot-scope="scope_gender">
+                  {{ scope_gender.row.gender === 0 ? '男' : '女' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="age" label="年龄" width="50" align="center"></el-table-column>
+              <el-table-column prop="emergency_contact" label="紧急联系人" width="250" align="center"></el-table-column>
+              <el-table-column prop="caretaker" label="护工" width="100" align="center">
+                <template slot-scope="scope_caretaker">
+                  {{ scope_caretaker.row.caretaker ==='null' ? '待分配' : (scope_caretaker.row.caretaker) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="bed_number" label="床位" width="100" align="center">
+                <template slot-scope="scope_bed_number">
+                  <span v-if="scope_bed_number.row.bed_number ==='null' " @click="openDialog(scope_bed_number.row)">待分配</span>
+                  <span v-else>{{ scope_bed_number.row.bed_number }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="详情" width="90" align="center">
+                <template slot-scope="scope">
+                  <el-button type="text" @click="detail(scope.row)">查看详情</el-button>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" align="center">
+                <template slot-scope="scope">
+                  <el-button icon="el-icon-edit" circle @click="handleEdit(scope.row)"></el-button>
+                  <el-button icon="el-icon-delete" circle @click="handleDelete(scope.row)"></el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-dialog title="修改用户信息" :visible.sync="dialogElderFormVisible">
+              <el-form :model="elder" :rules="rules" ref="elderForm">
+                <el-form-item label="姓名" :label-width="120">
+                  <el-input v-model="elder.name" autocomplete="off" readonly></el-input>
+                </el-form-item>
+                <el-form-item label="年龄" :label-width="120" prop="age">
+                  <el-input v-model="elder.age" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="性别" :label-width="120" prop="gender">
+                  <el-input v-model="elder.gender" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="生日" :label-width="120">
+                  <el-input v-model="elder.birthday" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="紧急联系人" :label-width="120" prop="emergency_contact">
+                  <el-input v-model="elder.emergency_contact" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="健康情况" :label-width="120">
+                  <el-input v-model="elder.health_condition" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item type="textarea" label="过敏情况" :label-width="120">
+                  <el-input v-model="elder.allergy_info" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item type="textarea" label="用药情况" :label-width="120">
+                  <el-input v-model="elder.medication_info" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="备注" :label-width="120">
+                  <el-input v-model="elder.remarks" autocomplete="off"></el-input>
+                </el-form-item>
+              </el-form>
+              <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogElderFormVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitForm('elderForm')">确定</el-button>
+              </div>
+            </el-dialog>
+          </div>
+        `,
+        data() {
+            return {
+                elderTableData: [],
+                dialogElderFormVisible: false,
+                elder: {},
+                rules: {
+                    name: [
+                        { required: true, message: '请输入姓名', trigger: 'blur' }
+                    ],
+                    age: [
+                        { required: true, message: '请输入年龄', trigger: 'blur' }
+                    ],
+                    gender: [
+                        { required: true, message: '请输入性别', trigger: 'blur' }
+                    ],
+                    emergency_contact: [
+                        { required: true, message: '请输入紧急联系人', trigger: 'blur' }
+                    ]
+                }
+            };
+        },
+        mounted() {
+            this.fetchData();
+        },
+        methods: {
+            fetchData() {
+                axios.get("/ms_war/selectAllElder")
+                    .then(resp => {
+                        this.elderTableData = resp.data;
+                    })
+                    .catch(error => {
+                        this.$message.error("获取数据失败");
+                        console.error("Error fetching data:", error);
+                    });
+            },
+            submitForm(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        axios.post("/ms_war/updateElder", this.elder)
+                            .then(resp => {
+                                if(resp.data === "success") {
+                                    this.fetchData();
+                                    this.$message.success("更新成功");
+                                } else {
+                                    this.$message.error("更新失败");
+                                }
+                            })
+                            .catch(error => {
+                                this.$message.error("提交表单失败");
+                                console.error("Error submitting form:", error);
+                            });
+                        this.dialogElderFormVisible = false;
+                    } else {
+                        this.$message.error("表单验证失败");
+                        return false;
+                    }
+                });
+            },
+            handleEdit(row) {
+                this.dialogElderFormVisible = true;
+                axios.get(`/ms_war/selectElderById?id=${row.id}`)
+                    .then(resp => {
+                        this.elder = resp.data;
+                    })
+                    .catch(error => {
+                        this.$message.error("获取老人信息失败");
+                        console.error("Error fetching data:", error);
+                    });
+            },
+            handleDelete(row) {
+                // 删除单个老人信息的逻辑
+            },
+            deleteSelected() {
+                // 批量删除逻辑
+            },
+            addNew() {
+                // 新增逻辑
+            },
+            detail(row) {
+                // 查看详情逻辑
+            }
+        }
+    };
+
+    const Caretaker = {
+        template: `
+          <div>
+            <br>
+            <el-button type="danger" plain @click="deleteSelected">批量删除</el-button>
+            <el-button type="primary" @click="addNew">新增</el-button>
+            <el-table :data="caretakerTableData" stripe>
+              <el-table-column prop="id" label="序号" width="50" align="center"></el-table-column>
+              <el-table-column prop="name" label="姓名" width="100" align="center"></el-table-column>
+              <el-table-column prop="gender" label="性别" width="50" align="center">
+                <template slot-scope="scope_gender">
+                  {{ scope_gender.row.gender === 0 ? '男' : '女' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="age" label="年龄" width="50" align="center"></el-table-column>
+              <el-table-column prop="phone" label="电话" width="100" align="center"></el-table-column>
+              <el-table-column label="详情" width="90" align="center">
+                <template slot-scope="scope">
+                  <el-button type="text" @click="detail(scope.row)">查看详情</el-button>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" align="center">
+                <template slot-scope="scope">
+                  <el-button icon="el-icon-edit" circle @click="handleEdit(scope.row)"></el-button>
+                  <el-button icon="el-icon-delete" circle @click="handleDelete(scope.row)"></el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-dialog title="修改用户信息" :visible.sync="dialogElderFormVisible">
+              <el-form :model="caretaker" :rules="rules" ref="elderForm">
+                <el-form-item label="姓名" :label-width="120">
+                  <el-input v-model="elder.name" autocomplete="off" readonly></el-input>
+                </el-form-item>
+                <el-form-item label="年龄" :label-width="120" prop="age">
+                  <el-input v-model="elder.age" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="性别" :label-width="120" prop="gender">
+                  <el-input v-model="elder.gender" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="生日" :label-width="120">
+                  <el-input v-model="elder.birthday" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="紧急联系人" :label-width="120" prop="emergency_contact">
+                  <el-input v-model="elder.emergency_contact" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="健康情况" :label-width="120">
+                  <el-input v-model="elder.health_condition" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item type="textarea" label="过敏情况" :label-width="120">
+                  <el-input v-model="elder.allergy_info" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item type="textarea" label="用药情况" :label-width="120">
+                  <el-input v-model="elder.medication_info" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="备注" :label-width="120">
+                  <el-input v-model="elder.remarks" autocomplete="off"></el-input>
+                </el-form-item>
+              </el-form>
+              <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogElderFormVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitForm('elderForm')">确定</el-button>
+              </div>
+            </el-dialog>
+          </div>
+        `,
+        data() {
+            return {
+                caretakerTableData: [],
+                dialogElderFormVisible: false,
+                caretaker: {}
+            };
+        },
+        mounted() {
+            this.fetchData();
+        },
+        methods: {
+            fetchData() {
+                axios.get("/ms_war/selectAllCaretaker")
+                    .then(resp => {
+                        this.caretakerTableData = resp.data;
+                    })
+                    .catch(error => {
+                        this.$message.error("获取数据失败");
+                        console.error("Error fetching data:", error);
+                    });
+            },
+            submitForm(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        axios.post("/ms_war/updateElder", this.elder)
+                            .then(resp => {
+                                if(resp.data === "success") {
+                                    this.fetchData();
+                                    this.$message.success("更新成功");
+                                } else {
+                                    this.$message.error("更新失败");
+                                }
+                            })
+                            .catch(error => {
+                                this.$message.error("提交表单失败");
+                                console.error("Error submitting form:", error);
+                            });
+                        this.dialogElderFormVisible = false;
+                    } else {
+                        this.$message.error("表单验证失败");
+                        return false;
+                    }
+                });
+            },
+            handleEdit(row) {
+                this.dialogElderFormVisible = true;
+                axios.get(`/ms_war/selectCaretakerById?id=${row.id}`)
+                    .then(resp => {
+                        this.elder = resp.data;
+                    })
+                    .catch(error => {
+                        this.$message.error("获取老人信息失败");
+                        console.error("Error fetching data:", error);
+                    });
+            },
+            handleDelete(row) {
+                // 删除单个老人信息的逻辑
+            },
+            deleteSelected() {
+                // 批量删除逻辑
+            },
+            addNew() {
+                // 新增逻辑
+            },
+            detail(row) {
+                // 查看详情逻辑
+            }
+        }
+    };
+
+    const DistributedBed = { template: '<div><h1>已分配床位</h1><p>这是健康记录页面的内容。</p></div>' };
+    const AvaliableBed = { template: '<div><h1>未分配床位</h1><p>这是健康检测页面的内容。</p></div>' };
+    const Hospitalize = { template: '<div><h1>入院办理</h1><p>这是健康记录页面的内容。</p></div>' };
+    const Discharge = { template: '<div><h1>出院办理</h1><p>这是健康检测页面的内容。</p></div>' };
+    const Distribute = { template: '<div><h1>床位分配</h1><p>这是健康检测页面的内容。</p></div>' };
+    const Home = {
+        template: `
+          <div>
+            <h1>欢迎进入，养老院出入院登记系统！</h1>
+            <el-row :gutter="12">
+              <el-col :span="6">
+                <el-card shadow="hover">
+                  <i class="el-icon-s-custom small-icon"></i>
+                  <p>老人数量</p>
+                </el-card>
+              </el-col>
+              <el-col :span="6">
+                <el-card shadow="hover">
+                  <i class="el-icon-user small-icon"></i>
+                  <p>护工数量</p>
+                </el-card>
+              </el-col>
+              <el-col :span="6">
+                <el-card shadow="hover">
+                  <i class="el-icon-s-home small-icon"></i>
+                  <p>已分配房间</p>
+                </el-card>
+              </el-col>
+              <el-col :span="6">
+                <el-card shadow="hover">
+                  <i class="el-icon-house small-icon"></i>
+                  <p>未分配房间</p>
+                </el-card>
+              </el-col>
+            </el-row>
+            <br>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-card style="width: 400px">
+                  <div slot="header" class="clearfix">
+                    <span>待分配</span>
+                    <el-button style="float: right; padding: 3px 0" type="text">点击分配</el-button>
+                  </div>
+                  <div v-for="o in 4" :key="o" class="text item">
+                    {{'列表内容 ' + o }}
+                  </div>
+                </el-card>
+                <br>
+                <el-card style="width: 400px">
+                  <div slot="header">当前时间</div>
+                  <div class="text">{{ currentTime }}</div>
+                </el-card>
+              </el-col>
+              <el-col :span="12">
+                <div style="width: 450px">
+                  <el-calendar v-model="calendar" :mini="true"></el-calendar>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+        `,
+        data() {
+            return {
+                calendar: new Date(),
+                currentTime: new Date().toLocaleTimeString()
+            };
+        },
+        computed: {
+            formattedDate() {
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+                return new Date().toLocaleDateString('en-US', options);
+            }
+        },
+        mounted() {
+            // 每秒更新
+            setInterval(() => {
+                this.currentTime = new Date().toLocaleTimeString();
+            }, 1000);
+        }
+    };
+
+
+
+    // 创建路由
+    const routes = [
+        { path: '/', component: Home, meta: { breadcrumb: '首页' } },
+        { path: '/elder', component: ElderProfile, meta: { breadcrumb: '老人档案' } },
+        { path: '/caretaker', component: Caretaker, meta: { breadcrumb: '员工档案' } },
+        { path: '/distributed-bed' , component: DistributedBed, meta: { breadcrumb: '已分配床位' } },
+        { path: '/avaliable-bed', component: AvaliableBed, meta: { breadcrumb: '未分配床位' } },
+        { path: '/hospitalize' , component: Hospitalize, meta: { breadcrumb: '住院' } },
+        { path: '/discharge', component: Discharge, meta: { breadcrumb: '出院' } },
+        { path: '/distribute', component: Distribute, meta: { breadcrumb: '床位分配' } }
+    ];
+
+    // 创建 router 实例
+    const router = new VueRouter({
+        routes
+    });
+
+    // 创建和挂载根实例
+    new Vue({
+        el: '#app',
+        router,
+        data() {
+            return {
+                breadcrumbs: [],
+                like: true,
+                value1: 4154.564,
+                value2: 1314,
+                title: "增长人数"
+            };
+        },
+        watch: {
+            $route(to) {
+                this.updateBreadcrumbs(to);
+            }
+        },
+        mounted() {
+            this.updateBreadcrumbs(this.$route);
+        },
+        methods: {
+            updateBreadcrumbs(route) {
+                const matchedRoutes = route.matched;
+                this.breadcrumbs = matchedRoutes.map(r => ({
+                    text: r.meta.breadcrumb,
+                    to: r.path
+                }));
+            }
+        }
+    });
+</script>
+</body>
+</html>

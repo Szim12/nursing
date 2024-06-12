@@ -1,0 +1,49 @@
+
+<html>
+<head>
+    <title>添加用户</title>
+    <!--vue引入-->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <!--axios引入-->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 引入 Element UI 的 CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.6/lib/theme-chalk/index.css">
+    <!-- 引入 Element UI 的 JavaScript -->
+    <script src="https://unpkg.com/element-ui@2.15.6/lib/index.js"></script>
+
+</head>
+<body>
+<div id="app">
+    <form action="/ms_war/addServlet" method="post">
+        用户名：<input name="username" v-model="user.username"><br>
+        姓名：<input name="fullname" v-model="user.fullname"><br>
+        权限：<input name="role" v-model="user.role"><br>
+        电话：<input name="phonenumber" v-model="user.phonenumber"><br>
+        邮箱：<input name="email" v-model="user.email"><br>
+        <button type="submit" @click="submitForm">提交</button>
+        <button type="reset">重置</button>
+    </form>
+</div>
+</body>
+<script>
+    new Vue({
+        el:"#app",
+        data(){
+            return{
+                user:{}
+            }
+        },
+        methods:{
+            submitForm(){
+                axios.post("http://localhost:7961/ms_war/addServlet",this.user)
+                    .then(resp => {
+                        this.users = resp.data; // 确保 resp.data 是用户数组
+                    })
+                    .catch(error => {
+                        console.error("Error fetching data:", error);
+                    });
+            }
+        }
+    })
+</script>
+</html>

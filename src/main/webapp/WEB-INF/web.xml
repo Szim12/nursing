@@ -1,0 +1,20 @@
+<!DOCTYPE web-app PUBLIC
+        "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+        "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app>
+    <display-name>Archetype Created Web Application</display-name>
+    <!--session失效时间，不写则默认30分钟，类似无操作时间过长自动退出登录-->
+    <session-config>
+        <session-timeout>30</session-timeout>
+    </session-config>
+    <!--<servlet>
+        <servlet-name>selectAllServlet</servlet-name>
+        <servlet-class>com.szm.web.SelectAllServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>selectAllServlet</servlet-name>
+        <url-pattern>/selectAllServlet</url-pattern>
+    </servlet-mapping>-->
+</web-app>
+

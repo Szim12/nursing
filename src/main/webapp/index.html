@@ -1,0 +1,192 @@
+<!--
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <a href="/ms_war/selectAllServlet">查询所有</a>
+</body>
+</html>-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <!--vue引入-->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <!-- 引入 Vue Router -->
+    <script src="https://cdn.jsdelivr.net/npm/vue-router@3.5.3/dist/vue-router.js"></script>
+    <!--axios引入-->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 引入 Element UI 的 CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.6/lib/theme-chalk/index.css">
+    <!-- 引入 Element UI 的 JavaScript -->
+    <script src="https://unpkg.com/element-ui@2.15.6/lib/index.js"></script>
+    <style>
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            line-height: 60px;
+        }
+
+        .el-aside {
+            color: #333;
+        }
+
+    </style>
+</head>
+<body>
+<div id="app">
+    <!--布局容器-->
+    <el-container style="height: 700px; border: 1px solid #eee">
+        <!--页面头-->
+        <el-header style="font-size: 40px;background-color: rgb(238, 241, 246);font-family: 华文宋体">养老院信息管理系统</el-header>
+        <el-container>
+            <!--左侧菜单栏-->
+            <el-aside width="200px" style="background-color: rgb(238, 241, 246);">
+                <el-menu :default-openeds="['1','2']">
+                    <el-submenu index="1">
+                        <template slot="title"><i class="el-icon-message"></i>信息管理</template>
+                        <el-menu-item-group>
+                            <template slot="title">个人信息</template>
+                            <el-menu-item index="1-1">用户档案</el-menu-item>
+                            <el-menu-item index="1-2">员工档案</el-menu-item>
+                            <el-menu-item index="1-3">老人档案</el-menu-item>
+                        </el-menu-item-group>
+                        <el-menu-item-group title="健康信息">
+                            <el-menu-item index="1-3">健康检测</el-menu-item>
+                            <el-menu-item index="1-3">健康记录</el-menu-item>
+                        </el-menu-item-group>
+                        <el-submenu index="1-4">
+                            <template slot="title">选项4</template>
+                            <el-menu-item index="1-4-1">选项4-1</el-menu-item>
+                        </el-submenu>
+                    </el-submenu>
+                    <el-submenu index="2">
+                        <template slot="title"><i class="el-icon-menu"></i>导航二</template>
+                        <el-menu-item-group>
+                            <template slot="title">分组一</template>
+                            <el-menu-item index="2-1">选项1</el-menu-item>
+                            <el-menu-item index="2-2">选项2</el-menu-item>
+                        </el-menu-item-group>
+                        <el-menu-item-group title="分组2">
+                            <el-menu-item index="2-3">选项3</el-menu-item>
+                        </el-menu-item-group>
+                        <el-submenu index="2-4">
+                            <template slot="title">选项4</template>
+                            <el-menu-item index="2-4-1">选项4-1</el-menu-item>
+                        </el-submenu>
+                    </el-submenu>
+
+                </el-menu>
+            </el-aside>
+
+            <!--右侧主体部分-->
+            <el-main>
+                <!--功能按钮-->
+                <el-button type="danger" plain>批量删除</el-button>
+                <el-button type="primary">新增</el-button>
+                <!--主体部分用户信息表格-->
+                <el-table
+                        :data="userTableData"
+                        stripe>
+                    <el-table-column prop="id" label="序号" width="140">
+                    </el-table-column>
+                    <el-table-column prop="username" label="用户名" width="120">
+                    </el-table-column>
+                    <el-table-column prop="fullname" label="姓名" width="120">
+                    </el-table-column>
+                    <el-table-column prop="phonenumber" label="电话">
+                    </el-table-column>
+                    <el-table-column prop="email" label="邮箱">
+                    </el-table-column>
+                    <el-table-column  label="操作">
+                        <template slot-scope="scope">
+                            <el-button type="primary" icon="el-icon-edit" circle @click="handleEdit(scope.row)"></el-button>
+                            <el-button type="danger" icon="el-icon-delete" circle></el-button>
+                        </template>
+                    </el-table-column>
+
+                    <!--点击修改按钮的表单-->
+                </el-table>
+                <el-dialog title="修改用户信息" :visible.sync="dialogFormVisible">
+                    <el-form :model="user">
+                        <el-form-item label="用户名" :label-width="120">
+                            <el-input v-model="user.username" autocomplete="off" readonly="true"></el-input>
+                        </el-form-item>
+                        <el-form-item label="姓名" :label-width="120">
+                            <el-input v-model="user.fullname" autocomplete="off"></el-input>
+                        </el-form-item>
+                        <el-form-item label="电话" :label-width="120">
+                            <el-input v-model="user.phonenumber" autocomplete="off"></el-input>
+                        </el-form-item>
+                        <el-form-item label="邮箱" :label-width="120">
+                            <el-input v-model="user.email" autocomplete="off"></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="dialogFormVisible = false;submitForm()">确 定</el-button>
+                    </div>
+                </el-dialog>
+            </el-main>
+        </el-container>
+    </el-container>
+
+</div>
+</body>
+<script>
+    new Vue({
+        el:"#app",
+        keepAlive:false,
+        data() {
+            return{
+                userTableData:[],
+                dialogFormVisible: false,
+                user:{}
+            }
+        },
+        /*获取users（userTableData）数据*/
+        mounted(){
+            axios.get("http://localhost:7961/ms_war/selectAllServlet")
+                .then(resp => {
+                    this.userTableData = resp.data; // 确保 resp.data 是用户数组
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                });
+        },
+        methods:{
+            /*提交修改信息*/
+            submitForm() {
+                axios({
+                    method:"post",
+                    url:"http://localhost:7961/ms_war/updateServlet",
+                    data:this.user
+                }).then(resp => {
+                    if(resp.data=="success"){
+                        location.href="http://localhost:7961/ms_war/index.html"
+                    }
+                }).catch(error => {
+                    console.error("Error fetching data:", error);
+                });
+            },
+            /*修改信息表单回显数据*/
+            handleEdit(row) {
+                this.dialogFormVisible = true; // 显示对话框
+                axios.get(`http://localhost:7961/ms_war/selectByUsernameServlet?username=${row.username}`) // 假设有一个按ID查询的接口
+                    .then(resp => {
+                        this.user = resp.data;
+                    })
+                    .catch(error => {
+                        console.error("Error fetching data:", error);
+                    });
+            }
+        }
+    })
+
+</script>
+
+
